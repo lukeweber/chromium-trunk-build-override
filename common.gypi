@@ -967,10 +967,10 @@
       # internal keys file is missing, the build will fail at compile
       # time.  If it is set to 0 and keys are not provided by other
       # means, a warning will be printed at compile time.
-      ['use_official_google_api_keys==2', {
-        'use_official_google_api_keys%':
-            '<!(python <(DEPTH)/google_apis/build/check_internal.py <(DEPTH)/google_apis/internal/google_chrome_api_keys.h)',
-      }],
+      #['use_official_google_api_keys==2', {
+      #  'use_official_google_api_keys%':
+      #      '<!(python <(DEPTH)/google_apis/build/check_internal.py <(DEPTH)/google_apis/internal/google_chrome_api_keys.h)',
+      #}],
       ['os_posix==1 and OS!="mac" and OS!="ios" and OS!="android"', {
         # Figure out the python architecture to decide if we build pyauto.
         'python_arch%': '<!(<(DEPTH)/build/linux/python_arch.sh <(sysroot)/usr/<(system_libdir)/libpython<(python_ver).so.1.0)',
