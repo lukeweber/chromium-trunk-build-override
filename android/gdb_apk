@@ -20,7 +20,16 @@
 # Returns the command's status
 # Note: the command's stderr is lost
 adb_shell () {
-  local TMPOUT="$(mktemp)"
+  host_os=$(uname -s | sed -e 's/Linux/linux/;s/Darwin/mac/')
+  case "${host_os}" in
+    "linux")
+      local TMPOUT="$(mktemp)"
+      ;;
+    "mac")
+      local tempname=`basename $0`
+      local TMPOUT=`mktemp -t ${tempname}`
+      ;;
+  esac
   local LASTLINE RET
   local ADB=${ADB:-adb}
 
@@ -50,8 +59,9 @@ if [[ "$adb" = "" ]] ; then
 fi
 
 usage() {
-  echo "usage: ${0##*/} [-p package_name] [-l shared_lib_dir] [-g gdb] [-r]"
+  echo "usage: ${0##*/} [-p package_name] [-s service_name] [-l shared_lib_dir] [-g gdb] [-r]"
   echo "-p package_name     the android APK package to be debugged"
+  echo "-s service_name     the name of the service running in a different process"
   echo "-l shared_lib_dir   directory containes native shared library"
   echo "-g gdb_args         agruments for gdb, eg: -g '-n -write'"
   echo "-r                  the target device is rooted"
@@ -59,7 +69,7 @@ usage() {
 
 process_options() {
   local OPTNAME OPTIND OPTERR OPTARG
-  while getopts ":p:l:g:r" OPTNAME; do
+  while getopts ":p:s:l:g:r" OPTNAME; do
     case "$OPTNAME" in
       p)
         package_name="$OPTARG"
@@ -72,6 +82,9 @@ process_options() {
 		;;
       r)
         rooted_phone=1
+        ;;
+      s)
+        service_name=":$OPTARG"
         ;;
       \:)
         echo "'-$OPTARG' needs an argument."
@@ -96,9 +109,10 @@ process_options() {
 rooted_phone=0
 
 root=$(dirname $0)/../..
-package_name=org.chromium.content_shell
+package_name=com.tuenti.voice.example
 shared_lib_dir=$root/out/${BUILDTYPE:-Debug}/lib.target
 gdb_args=''
+service_name=''
 
 #process options
 process_options "$@"
@@ -118,7 +132,7 @@ if [[ "$pid" != "" ]] ; then
   fi
 fi
 
-pid=$(adb_shell ps | awk "/$package_name$/ {print \$2}")
+pid=$(adb_shell ps | awk "/${package_name}${service_name}/ {print \$2}")
 if [[ "$pid" = "" ]] ; then
   echo "No $package_name running?"
   echo "Try this: adb shell am start -a android.intent.action.VIEW " \

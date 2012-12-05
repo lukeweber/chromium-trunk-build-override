@@ -38,6 +38,9 @@
       'inputs': [
         '<(jni_generator)',
       ],
+      'variables': {
+        'jni_gen_dir': 'base',
+      },
       'outputs': [
         '<(SHARED_INTERMEDIATE_DIR)/<(jni_gen_dir)/jni/<(RULE_INPUT_ROOT)_jni.h',
       ],

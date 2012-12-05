@@ -56,17 +56,19 @@ host_os=$(uname -s | sed -e 's/Linux/linux/;s/Darwin/mac/')
 
 case "${host_os}" in
   "linux")
-    toolchain_dir="linux-${host_arch}"
+    toolchain_dir="linux-x86"
+    rlink_command="readlink -f"
     ;;
   "mac")
-    toolchain_dir="darwin-${host_arch}"
+    toolchain_dir="darwin-x86"
+    rlink_command="./build/android/mac_readlink"
     ;;
   *)
     echo "Host platform ${host_os} is not supported" >& 2
     return 1
 esac
 
-CURRENT_DIR="$(readlink -f "$(dirname $BASH_SOURCE)/../../")"
+CURRENT_DIR="$(${rlink_command} "$(dirname $BASH_SOURCE)/../../")"
 if [[ -z "${CHROME_SRC}" ]]; then
   # If $CHROME_SRC was not set, assume current directory is CHROME_SRC.
   export CHROME_SRC="${CURRENT_DIR}"
