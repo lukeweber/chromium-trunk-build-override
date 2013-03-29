@@ -1,5 +1,3 @@
-#!/bin/bash
-
 # Copyright (c) 2012 The Chromium Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
@@ -85,7 +83,7 @@ the one you want."
 fi
 
 # Android sdk platform version to use
-export ANDROID_SDK_VERSION=16
+export ANDROID_SDK_VERSION=17
 
 if [[ "${ANDROID_SDK_BUILD}" -eq 1 ]]; then
   if [[ -z "${TARGET_ARCH}" ]]; then
@@ -106,6 +104,15 @@ elif [[ -z "$ANDROID_BUILD_TOP" || \
   return 1
 elif [[ -n "$CHROME_ANDROID_BUILD_WEBVIEW" ]]; then
   webview_build_init
+fi
+
+java -version 2>&1 | grep -qs "Java HotSpot"
+if [ $? -ne 0 ]; then
+  echo "Please check and make sure you are using the Oracle Java SDK, and it"
+  echo "appears before other Java SDKs in your path."
+  echo "Refer to the \"Install prerequisites\" section here:"
+  echo "https://code.google.com/p/chromium/wiki/AndroidBuildInstructions"
+  return 1
 fi
 
 # Workaround for valgrind build

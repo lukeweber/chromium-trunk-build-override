@@ -139,6 +139,8 @@ def get_landmines(target):
   if (distributor() == 'goma' and platform() == 'win32' and
       builder() == 'ninja'):
     add('Need to clobber winja goma due to backend cwd cache fix.')
+  if platform() == 'android':
+    add('Clean android out directories to reduce zip size.')
 
   return landmines
 
@@ -166,7 +168,7 @@ def get_target_build_dir(build_tool, target, is_iphone=False):
   elif build_tool == 'scons':
     ret = os.path.join(SRC_DIR, 'sconsbuild', target)
   else:
-    raise NotImplementedError()
+    raise NotImplementedError('Unexpected GYP_GENERATORS (%s)' % build_tool)
   return os.path.abspath(ret)
 
 

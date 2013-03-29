@@ -110,6 +110,7 @@ rooted_phone=0
 
 root=$(dirname $0)/../..
 package_name=com.tuenti.voice.example
+
 shared_lib_dir=$root/out/${BUILDTYPE:-Debug}/lib.target
 gdb_args=''
 service_name=''

@@ -31,23 +31,31 @@ do
   --no-prompt)              do_default=1
                             do_quietly="-qq --assume-yes"
     ;;
+  --unsupported)            do_unsupported=1;;
   *) usage;;
   esac
   shift
 done
 
-ubuntu_versions="10\.04|10\.10|11\.04|11\.10|12\.04"
-ubuntu_codenames="lucid|maverick|natty|oneiric|precise"
+ubuntu_versions="10\.04|10\.10|11\.04|11\.10|12\.04|12\.10"
+ubuntu_codenames="lucid|maverick|natty|oneiric|precise|quantal"
+ubuntu_issue="Ubuntu ($ubuntu_versions|$ubuntu_codenames)"
+# GCEL is an Ubuntu-derived VM image used on Google Compute Engine; /etc/issue
+# doesn't contain a version number so just trust that the user knows what
+# they're doing.
+gcel_issue="^GCEL"
 
-if ! egrep -q "Ubuntu ($ubuntu_versions|$ubuntu_codenames)" /etc/issue; then
-  echo "ERROR: Only Ubuntu 10.04 (lucid) through 12.04 (precise) are currently"\
-      "supported" >&2
-  exit 1
-fi
+if [ 0 -eq "${do_unsupported-0}" ] ; then
+  if ! egrep -q "($ubuntu_issue|$gcel_issue)" /etc/issue; then
+    echo "ERROR: Only Ubuntu 10.04 (lucid) through 12.10 (quantal) are"\
+        "currently supported" >&2
+    exit 1
+  fi
 
-if ! uname -m | egrep -q "i686|x86_64"; then
-  echo "Only x86 architectures are currently supported" >&2
-  exit
+  if ! uname -m | egrep -q "i686|x86_64"; then
+    echo "Only x86 architectures are currently supported" >&2
+    exit
+  fi
 fi
 
 if [ "x$(id -u)" != x0 ]; then
@@ -64,13 +72,14 @@ dev_list="apache2.2-bin bison curl elfutils fakeroot flex g++ gperf
           language-pack-fr libapache2-mod-php5 libasound2-dev libbz2-dev
           libcairo2-dev libcups2-dev libcurl4-gnutls-dev libelf-dev
           libgconf2-dev libgl1-mesa-dev libglib2.0-dev libglu1-mesa-dev
-          libgnome-keyring-dev libgtk2.0-dev libwebkit-dev libkrb5-dev
-          libnspr4-dev libnss3-dev libpam0g-dev libpci-dev libsctp-dev
+          libgnome-keyring-dev libgtk2.0-dev libkrb5-dev libnspr4-dev
+          libnss3-dev libpam0g-dev libpci-dev libsctp-dev libspeechd-dev
           libsqlite3-dev libssl-dev libudev-dev libwww-perl libxslt1-dev
-          libxss-dev libxt-dev libxtst-dev mesa-common-dev patch perl php5-cgi
-          pkg-config python python-cherrypy3 python-dev python-psutil rpm ruby
-          subversion ttf-dejavu-core ttf-indic-fonts ttf-kochi-gothic
-          ttf-kochi-mincho ttf-thai-tlwg wdiff git-core $chromeos_dev_list"
+          libxss-dev libxt-dev libxtst-dev mesa-common-dev metacity patch perl
+          php5-cgi pkg-config python python-cherrypy3 python-dev python-psutil
+          rpm ruby subversion ttf-dejavu-core ttf-indic-fonts ttf-kochi-gothic
+          ttf-kochi-mincho ttf-thai-tlwg wdiff git-core
+          $chromeos_dev_list"
 
 # 64-bit systems need a minimum set of 32-bit compat packages for the pre-built
 # NaCl binaries. These are always needed, regardless of whether or not we want
@@ -86,10 +95,10 @@ chromeos_lib_list="libpulse0 libbz2-1.0 libcurl4-gnutls-dev"
 lib_list="libatk1.0-0 libc6 libasound2 libcairo2 libcups2 libexpat1
           libfontconfig1 libfreetype6 libglib2.0-0 libgnome-keyring0
           libgtk2.0-0 libpam0g libpango1.0-0 libpci3 libpcre3 libpixman-1-0
-          libpng12-0 libstdc++6 libsqlite3-0 libudev0 libx11-6 libxau6 libxcb1
-          libxcomposite1 libxcursor1 libxdamage1 libxdmcp6 libxext6 libxfixes3
-          libxi6 libxinerama1 libxrandr2 libxrender1 libxtst6 zlib1g
-          $chromeos_lib_list"
+          libpng12-0 libspeechd2 libstdc++6 libsqlite3-0 libudev0 libx11-6
+          libxau6 libxcb1 libxcomposite1 libxcursor1 libxdamage1 libxdmcp6
+          libxext6 libxfixes3 libxi6 libxinerama1 libxrandr2 libxrender1
+          libxtst6 zlib1g $chromeos_lib_list"
 
 # Debugging symbols for all of the run-time libraries
 dbg_list="libatk1.0-dbg libc6-dbg libcairo2-dbg libfontconfig1-dbg
@@ -105,8 +114,7 @@ arm_list="libc6-armel-cross libc6-dev-armel-cross libgcc1-armel-cross
           libgcc1-dbg-armel-cross libgomp1-dbg-armel-cross
           binutils-arm-linux-gnueabi cpp-arm-linux-gnueabi
           gcc-arm-linux-gnueabi g++-arm-linux-gnueabi
-          cpp-4.5-arm-linux-gnueabi gcc-4.5-arm-linux-gnueabi
-          g++-4.5-arm-linux-gnueabi libmudflap0-dbg-armel-cross"
+          libmudflap0-dbg-armel-cross"
 
 # Plugin lists needed for tests.
 plugin_list="flashplugin-installer"
@@ -191,6 +199,13 @@ if test "$do_inst_syms" = "1"; then
 else
   echo "Skipping installation of debugging symbols."
   dbg_list=
+fi
+
+# When cross building for arm on 64-bit systems the host binaries
+# that are part of v8 need to be compiled with -m32 which means
+# that basic multilib support is needed.
+if [ "$(uname -m)" = "x86_64" ]; then
+  arm_list="$arm_list g++-multilib"
 fi
 
 if test "$do_inst_arm" = "1"; then

@@ -12,6 +12,7 @@
 #   'variables': {
 #     'package_name': <name-of-package>
 #     'aidl_interface_file': '<interface-path>/<interface-file>.aidl',
+#     'aidl_import_include': '<(DEPTH)/<path-to-src-dir>',
 #   },
 #   'sources': {
 #     '<input-path1>/<input-file1>.aidl',
@@ -27,6 +28,10 @@
 #   <(PRODUCT_DIR)/lib.java/<input-file2>.java
 #   ...
 #
+# Optional variables:
+#  aidl_import_include - This should be an absolute path to your java src folder
+#    that contains the classes that are imported by your aidl files.
+#
 # TODO(cjhopman): dependents need to rebuild when this target's inputs have changed.
 
 {
@@ -35,6 +40,19 @@
       'generated_src_dirs': ['<(SHARED_INTERMEDIATE_DIR)/<(package_name)/aidl/'],
     },
   },
+  'variables': {
+    'aidl_import_include%': '',
+    'additional_aidl_arguments': [],
+    'additional_aidl_input_paths': [],
+  },
+  'conditions': [
+    ['"<(aidl_import_include)"!=""', {
+      'variables': {
+        'additional_aidl_arguments': [ '-I<(aidl_import_include)' ],
+        'additional_aidl_input_paths': [ '<!@(find <(aidl_import_include) -name "*.java")', ]
+      }
+    }],
+  ],
   'rules': [
     {
       'rule_name': 'compile_aidl',
@@ -42,6 +60,7 @@
       'inputs': [
         '<(android_sdk)/framework.aidl',
         '<(aidl_interface_file)',
+        '<@(additional_aidl_input_paths)',
       ],
       'outputs': [
         '<(SHARED_INTERMEDIATE_DIR)/<(package_name)/aidl/<(RULE_INPUT_ROOT).java',
@@ -50,6 +69,7 @@
         '<(android_sdk_tools)/aidl',
         '-p<(android_sdk)/framework.aidl',
         '-p<(aidl_interface_file)',
+        '<@(additional_aidl_arguments)',
         '<(RULE_INPUT_PATH)',
         '<(SHARED_INTERMEDIATE_DIR)/<(package_name)/aidl/<(RULE_INPUT_ROOT).java',
       ],
